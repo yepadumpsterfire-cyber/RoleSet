@@ -1,1 +1,1 @@
-Filler text for Randomizer
+Chill Randomizer for anyone.
