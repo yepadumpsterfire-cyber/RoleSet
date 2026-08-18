@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rollset - Optimized Randomizer Suite</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            --result-bg: #0f172a;
+            --result-border: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            overflow-x: hidden;
+        }
+
+        /* Combined Global Interactive Reset & Touch Targets Matrix */
+        button, .tab-btn, .btn, .btn-clear, .btn-inline-add, .tag-remove, .coin, .eight-ball, .die, .switch-label, .slider-capsule, .status-blip, .file-import-btn {
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: background-color 0.2s, border-color 0.2s, color 0.2s, transform 0.1s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        button:active, .tab-btn:active, .btn:active, .btn-clear:active, .btn-inline-add:active, .file-import-btn:active, .tag-remove:active {
+            transform: scale(0.96) !important;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 760px;
+            margin-top: 1rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .controls-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            background-color: var(--bg-secondary);
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .switches-group {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1.25rem;
+        }
+
+        .switch-label {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-main);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .switch-label.capsule-container { gap: 0.5rem; }
+        .switch-label.capsule-container input[type="checkbox"],
+        .switch-label.blip-container input[type="checkbox"] { display: none; }
+        
+        .slider-capsule {
+            position: relative;
+            width: 34px;
+            height: 18px;
+            background-color: var(--bg-tertiary);
+            border-radius: 20px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .slider-capsule::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--text-muted);
+            top: 2px;
+            left: 2px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .capsule-container input[type="checkbox"]:checked + .slider-capsule {
+            background: linear-gradient(135deg, var(--accent), #818cf8);
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+            border-color: transparent;
+        }
+        .capsule-container input[type="checkbox"]:checked + .slider-capsule::after {
+            transform: translateX(16px);
+            background-color: #ffffff;
+        }
+
+        .switch-label.blip-container { gap: 0.45rem; }
+        .status-blip {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--bg-tertiary);
+            transition: all 0.25s ease;
+            flex-shrink: 0;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255, 255, 255, 0.02);
+        }
+        .blip-container input[type="checkbox"]:checked + .status-blip {
+            background-color: #a855f7;
+            box-shadow: 0 0 8px #a855f7, 0 0 14px #a855f7;
+            animation: blipBreathe 2s infinite ease-in-out;
+        }
+        @keyframes blipBreathe {
+            0%, 100% { opacity: 0.75; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); box-shadow: 0 0 12px #a855f7, 0 0 18px #a855f7; }
+        }
+
+        .action-utilities { display: flex; align-items: center; gap: 0.5rem; position: relative; flex-wrap: wrap; }
+
+        .share-btn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.45rem 0.85rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .share-btn:hover { background-color: var(--accent-hover); }
+
+        .share-toast {
+            position: absolute;
+            top: -35px;
+            left: 0;
+            background-color: var(--success);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            opacity: 0;
+            transform: translateY(5px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+            box-shadow: var(--card-shadow);
+            white-space: nowrap;
+        }
+        .share-toast.show { opacity: 1; transform: translateY(0); }
+
+        .theme-select {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            border: 1px solid var(--bg-tertiary);
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .tabs {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            background-color: var(--bg-secondary);
+            padding: 0.35rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.75rem 0.15rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .tab-btn svg { width: 18px; height: 18px; fill: currentColor; }
+        .tab-btn:hover { color: var(--text-main); background-color: rgba(255, 255, 255, 0.03); }
+        .tab-btn.active { color: #ffffff; background-color: var(--accent); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+
+        .panel {
+            background-color: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            display: none;
+            margin-top: 0.5rem;
+            animation: fadeIn 0.3s ease;
+        }
+        .panel.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 { font-size: 1.25rem; margin-bottom: 1.25rem; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 0.5rem; }
+        
+        label:not(.switch-label) { 
+            display: block; 
+            font-size: 0.72rem; 
+            color: var(--text-muted); 
+            margin-bottom: 0.5rem; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            letter-spacing: 0.06em; 
+        }
+
+        input[type="number"], textarea, input[type="text"] {
+            width: 100%;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--bg-tertiary);
+            color: var(--text-main);
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus, textarea:focus, input[type="text"]:focus { border-color: var(--accent); }
+
+        .input-group-fused {
+            display: flex;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--bg-tertiary);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            transition: border-color 0.2s ease;
+        }
+        .input-group-fused:focus-within { border-color: var(--accent); }
+        .input-group-fused input[type="text"] { flex: 2; background: transparent; border: none; padding: 0.75rem; color: var(--text-main); outline: none; font-size: 16px; }
+        .input-group-fused input[type="number"] { width: 66px; background: transparent; border: none; border-left: 1px solid var(--bg-tertiary); padding: 0.75rem; color: var(--text-main); text-align: center; outline: none; border-radius: 0; font-size: 16px; }
+        
+        .btn-inline-add {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0 1.25rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+        }
+        .btn-inline-add:hover { background-color: var(--accent-hover); }
+
+        .btn {
+            width: 100%;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.85rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        }
+        .btn:hover { background-color: var(--accent-hover); }
+
+        .btn-clear {
+            background-color: var(--danger);
+            font-size: 0.72rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            color: white;
+            border: none;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+        }
+        .btn-clear:hover { background-color: var(--danger-hover); }
+
+        .btn-undo-ghost {
+            display: none;
+            background-color: transparent;
+            border: 1px solid var(--success);
+            color: var(--success);
+            font-size: 0.72rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+        }
+        .btn-undo-ghost:hover { background-color: rgba(16, 185, 129, 0.08); }
+
+        .option-toggle-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.65rem;
+            margin: 1rem 0;
+            background-color: rgba(255, 255, 255, 0.02);
+            padding: 0.75rem 0.85rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            width: 100%;
+        }
+
+        .file-import-btn {
+            background-color: var(--bg-tertiary);
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.35rem 0.75rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .file-import-btn:hover { border-color: var(--accent); background-color: rgba(99, 102, 241, 0.05); }
+
+        .result-container { position: relative; margin-top: 1.5rem; }
+
+        .result-box {
+            background-color: var(--result-bg);
+            border: 1px solid var(--result-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            min-height: 110px;
+            display: flex;
+            flex-direction: column; 
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem; 
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            position: relative;
+            transition: all 0.25s ease;
+        }
+
+        .result-box.highlight {
+            background-color: var(--bg-primary);
+            border-color: var(--accent);
+            color: var(--text-main);
+            font-weight: 700;
+            font-size: 1.75rem;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
+            animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .copy-result-btn {
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            background-color: var(--bg-tertiary);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-muted);
+            padding: 0.2rem 0.45rem;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .result-container:hover .copy-result-btn,
+        .result-box.highlight ~ .copy-result-btn { opacity: 1; pointer-events: auto; }
+        .copy-result-btn:hover { color: var(--text-main); border-color: var(--accent); background-color: var(--bg-secondary); }
+
+        .widget-toggle-btn {
+            display: none;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: var(--card-shadow);
+            align-items: center;
+            justify-content: center;
+        }
+        .widget-toggle-btn:hover { background-color: var(--accent-hover); transform: scale(1.05); }
+
+        body.view-focus header h1,
+        body.view-focus .tabs { display: none !important; }
+        
+        body.view-focus .controls-row {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1000;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--bg-tertiary);
+            padding: 0.5rem;
+            border-radius: 30px;
+            width: 44px;
+            height: 44px;
+            overflow: hidden;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        body.view-focus .controls-row .widget-toggle-btn { display: flex; }
+        body.view-focus .controls-row .switches-group,
+        body.view-focus .controls-row .action-utilities { display: none !important; }
+
+        body.view-focus .controls-row.expanded {
+            width: 320px;
+            height: auto;
+            max-height: 85vh;
+            border-radius: 16px;
+            padding: 1.25rem;
+            overflow-y: auto;
+            align-items: stretch;
+            gap: 1rem;
+        }
+        body.view-focus .controls-row.expanded .widget-toggle-btn { align-self: flex-end; width: 32px; height: 32px; font-size: 0.9rem; border-radius: 8px; }
+        body.view-focus .controls-row.expanded .switches-group,
+        body.view-focus .controls-row.expanded .action-utilities { display: flex !important; flex-direction: column; align-items: stretch; width: 100%; gap: 1rem; }
+
+        body.view-focus .wheel-inputs,
+        body.view-focus .option-toggle-container,
+        body.view-focus .range-inputs,
+        body.view-focus .picker-options,
+        body.view-focus label:not(.switch-label),
+        body.view-focus textarea,
+        body.view-focus #ball-question,
+        body.view-focus .wheel-header-row,
+        body.view-focus .input-group-fused,
+        body.view-focus .item-list-tags,
+        body.view-focus .dice-custom-row,
+        body.view-focus .history-list {
+            display: none !important;
+        }
+
+        body.view-focus .panel { padding: 3rem 1.5rem; margin-top: 2rem; }
+        body.view-focus .wheel-container { width: 330px; height: 330px; margin: 1rem auto; }
+
+        .wheel-container { position: relative; width: 280px; height: 280px; margin: 1.5rem auto; transition: width 0.3s, height 0.3s; }
+        #wheel { width: 100%; height: 100%; border-radius: 50%; box-shadow: 0 0 0 8px var(--bg-tertiary), var(--card-shadow); transition: transform 4s cubic-bezier(0.1, 0.8, 0.1, 1); }
+
+        .wheel-pointer {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 14px solid transparent;
+            border-right: 14px solid transparent;
+            border-top: 24px solid var(--danger);
+            z-index: 10;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+
+        .wheel-inputs { margin-top: 1.5rem; }
+        .wheel-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
+
+        .item-list-tags { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; max-height: 130px; overflow-y: auto; padding: 2px; }
+
+        .tag-row {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--bg-tertiary);
+            padding: 0.5rem;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            min-height: 44px;
+        }
+
+        .tag-info { display: flex; align-items: center; gap: 0.75rem; }
+        .weight-indicator { background-color: var(--accent); color: white; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 0.15rem 0.45rem; border-radius: 4px; }
+        
+        .tag-remove { 
+            cursor: pointer; 
+            color: var(--text-muted); 
+            font-weight: bold; 
+            font-size: 1.2rem; 
+            padding: 0.5rem 0.8rem; 
+            margin: -0.5rem -0.5rem -0.5rem 0; 
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s ease;
+        }
+        .tag-remove:hover { color: var(--danger); }
+
+        .coin-stage { perspective: 1000px; width: 160px; height: 160px; margin: 2rem auto; }
+        .coin { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 2s cubic-bezier(0.1, 0.7, 0.1, 1); cursor: pointer; }
+
+        .coin-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            padding: 0.25rem;
+            text-align: center;
+            border: 6px solid #e2e8f0;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.3), var(--card-shadow);
+            word-break: break-word;
+        }
+
+        .coin-front { background: linear-gradient(135deg, #eab308, #ca8a04); color: #713f12; border-color: #fef08a; }
+        .coin-back { background: linear-gradient(135deg, #cbd5e1, #64748b); color: #1e293b; transform: rotateY(180deg); border-color: #94a3b8; }
+
+        .dice-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin: 1.5rem 0;
+            min-height: 72px;
+            background-color: rgba(0,0,0,0.1);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px dashed rgba(255,255,255,0.05);
+        }
+
+        .die {
+            width: 64px;
+            height: 64px;
+            background-color: var(--bg-tertiary);
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+            box-shadow: var(--card-shadow);
+        }
+        .die.shake { animation: shakeDie 0.5s ease infinite; }
+
+        @keyframes shakeDie {
+            0% { transform: translate(2px, 1px) rotate(0deg); }
+            20% { transform: translate(-3px, 0px) rotate(2deg); }
+            40% { transform: translate(1px, -1px) rotate(-2deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            100% { transform: translate(1px, 2px) rotate(0deg); }
+        }
+
+        .ball-stage { display: flex; justify-content: center; margin: 2rem 0; }
+
+        .eight-ball {
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle at 30% 30%, #475569, #0f172a 80%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset -10px -10px 30px rgba(0,0,0,0.7), var(--card-shadow);
+            cursor: pointer;
+            position: relative;
+        }
+        .eight-ball.shake { animation: shakeBall 0.6s ease; }
+
+        .ball-window {
+            width: 90px;
+            height: 90px;
+            background-color: #020617;
+            border-radius: 50%;
+            border: 4px solid #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 0.5rem;
+            overflow: hidden;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+        }
+
+        .ball-window .inner-eight { font-size: 3rem; font-weight: 800; color: #ffffff; }
+        .ball-answer { font-size: 0.75rem; font-weight: 600; color: #60a5fa; line-height: 1.2; animation: floatText 1s ease; font-style: normal; }
+
+        @keyframes shakeBall {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            20% { transform: translate(-10px, 5px) rotate(-4deg); }
+            50% { transform: translate(12px, -8px) rotate(5deg); }
+            75% { transform: translate(-5px, 2px) rotate(-1deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+
+        .range-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+        .picker-options { margin-top: 1rem; margin-bottom: 1.5rem; }
+        .history-list { margin-top: 1rem; font-size: 0.82rem; color: var(--text-muted); text-align: left; max-height: 95px; overflow-y: auto; border-top: 1px solid var(--bg-tertiary); padding-top: 0.5rem; }
+
+        .session-log-section {
+            margin-top: 2rem;
+            background-color: var(--bg-secondary);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: none; 
+        }
+
+        .session-log-header {
+            color: var(--text-muted);
+            padding: 0.85rem 1.2rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.01);
+        }
+
+        .stats-summary-drawer {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid var(--bg-tertiary);
+            padding: 0.65rem 1.2rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            line-height: 1.4;
+        }
+
+        .stats-badge { background: rgba(255,255,255,0.03); padding: 0.15rem 0.45rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); font-size: 0.75rem; }
+        .stats-badge strong { color: var(--accent); }
+
+        .session-log-container { padding: 1rem; background-color: var(--bg-primary); border-top: 1px solid var(--bg-tertiary); max-height: 180px; overflow-y: auto; }
+        .log-entry { font-family: monospace; font-size: 0.8rem; padding: 0.25rem 0; border-bottom: 1px dashed rgba(255,255,255,0.03); display: flex; gap: 0.5rem; }
+        .log-timestamp { color: var(--accent); }
+        .log-tag { font-weight: bold; color: var(--text-muted); }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 3px; }
+
+        @media(max-width: 640px) {
+            header h1 { font-size: 1.75rem; }
+            .tabs { grid-template-columns: repeat(3, 1fr); gap: 0.35rem; }
+            .tab-btn { padding: 0.5rem 0.15rem; font-size: 0.68rem; }
+            .panel { padding: 1.25rem; }
+            .wheel-container { width: 220px; height: 220px; }
+            .controls-row { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- TOP CONTROLS WORKBAR -->
+        <header>
+            <div class="controls-row" id="topControlMenuPillRow">
+                <button class="widget-toggle-btn" onclick="PlatformEngine.toggleFocusMenu()">⚙️</button>
+
+                <div class="switches-group">
+                    <label class="switch-label blip-container">
+                        <input type="checkbox" id="soundToggle" checked>
+                        <span class="status-blip"></span>
+                        <span>🔊 Sound Effects</span>
+                    </label>
+                    <label class="switch-label blip-container">
+                        <input type="checkbox" id="logToggle" onchange="PlatformEngine.toggleSessionLog()">
+                        <span class="status-blip"></span>
+                        <span>📜 Session Log</span>
+                    </label>
+                    <label class="switch-label capsule-container">
+                        <input type="checkbox" id="fastToggle">
+                        <span class="slider-capsule"></span>
+                        <span>⚡ Fast Mode</span>
+                    </label>
+                    <label class="switch-label capsule-container">
+                        <input type="checkbox" id="focusToggle" onchange="PlatformEngine.changeViewMode()">
+                        <span class="slider-capsule"></span>
+                        <span>📺 Focus Mode</span>
+                    </label>
+                </div>
+                <div class="action-utilities">
+                    <div class="share-toast" id="shareToast">✓ URL Share Link Copied!</div>
+                    <button class="share-btn" onclick="PlatformEngine.copyShareLink()">
+                        🔗 Copy Config Link
+                    </button>
+                </div>
+            </div>
+            <h1>Rollset</h1>
+        </header>
+
+        <!-- WORKSPACE SELECTION TABS -->
+        <nav class="tabs">
+            <button class="tab-btn active" id="btn-wheel" onclick="PlatformEngine.switchTab('wheel-panel')">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                Spinner
+            </button>
+            <button class="tab-btn" id="btn-coin" onclick="PlatformEngine.switchTab('coin-panel')">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/></svg>
+                Coin
+            </button>
+            <button class="tab-btn" id="btn-dice" onclick="PlatformEngine.switchTab('dice-panel')">
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14c0 .55-.45 1-1 1s-1-.45-1-1 .45-1 1-1 1 .45 1 1zm0-4c0 .55-.45 1-1 1s-1-.45-1-1 .45-1 1-1 1 .45 1 1zm0-4c0 .55-.45 1-1 1s-1-.45-1-1 .45-1 1-1 1 .45 1 1z"/></svg>
+                Dice
+            </button>
+            <button class="tab-btn" id="btn-number" onclick="PlatformEngine.switchTab('number-panel')">
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 6h-2v2h2v2h-2v2h-2v-2H9v-2h2v-2H9V7h6v2z"/></svg>
+                Numbers
+            </button>
+            <button class="tab-btn" id="btn-list" onclick="PlatformEngine.switchTab('list-panel')">
+                <svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
+                Raffle
+            </button>
+            <button class="tab-btn" id="btn-ball" onclick="PlatformEngine.switchTab('ball-panel')">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>
+                8-Ball
+            </button>
+        </nav>
+
+        <!-- MODULE 1: SPINNER WHEEL -->
+        <div id="wheel-panel" class="panel active">
+            <h2>🔮 Custom Weighted Spinner Wheel</h2>
+            <div class="wheel-container">
+                <div class="wheel-pointer"></div>
+                <canvas id="wheel" width="560" height="560"></canvas>
+            </div>
+            
+            <button class="btn" id="spin-btn" onclick="SpinnerModule.spin()">Spin the Wheel!</button>
+
+            <div class="option-toggle-container">
+                <label class="switch-label capsule-container">
+                    <input type="checkbox" id="wheelRemoveToggle">
+                    <span class="slider-capsule"></span>
+                    <span>Clean up: Automatically slice winner out of pool on landing</span>
+                </label>
+            </div>
+
+            <div class="wheel-inputs">
+                <div class="wheel-header-row">
+                    <label style="margin-bottom: 0;">Manage Options & Bias Weights</label>
+                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <button class="btn-undo-ghost" id="wheelUndoBtn" onclick="SpinnerModule.restoreBackup()">↩ Undo Wipe</button>
+                        <select class="theme-select" style="font-size: 0.72rem; padding: 0.35rem 0.5rem;" onchange="SpinnerModule.loadPreset(this)">
+                            <option value="">📋 Load Preset...</option>
+                            <option value="yesno">Yes / No / Maybe</option>
+                            <option value="days">Days of the Week</option>
+                            <option value="rps">Rock Paper Scissors</option>
+                            <option value="num15">Numbers 1-5</option>
+                            <option value="num110">Numbers 1-10</option>
+                            <option value="mystic">🔮 Mystic Oracle</option>
+                            <option value="party">🎭 Party Activity Picker</option>
+                            <option value="chores">🧹 Chore Roulette</option>
+                            <option value="dinner">🍽️ What's for Dinner</option>
+                        </select>
+                        <label class="file-import-btn">
+                            📁 Import TXT / CSV
+                            <input type="file" accept=".txt,.csv" onchange="SpinnerModule.handleImport(event)" style="display: none;">
+                        </label>
+                        <button class="btn-clear" onclick="SpinnerModule.clearAll()">🗑️ Clear All</button>
+                    </div>
+                </div>
+                
+                <div class="input-group-fused">
+                    <input type="text" id="wheel-new-item" placeholder="Item name (Supports Emojis)...">
+                    <input type="number" id="wheel-new-weight" value="1" min="1" max="10" placeholder="Wt" inputmode="numeric">
+                    <button class="btn-inline-add" onclick="SpinnerModule.addItem()">Add</button>
+                </div>
+                
+                <div class="item-list-tags" id="wheel-tags-container"></div>
+            </div>
+
+            <div class="result-container" id="wheelContainerBox">
+                <div class="result-box" id="wheel-result">Ready to spin...</div>
+                <button class="copy-result-btn" onclick="CoreUtils.copyOutput('wheel-result')">📋 Copy</button>
+            </div>
+        </div>
+
+        <!-- MODULE 2: COIN FLIPPER -->
+        <div id="coin-panel" class="panel">
+            <h2>🪙 3D Coin Flipper</h2>
+            
+            <div class="option-toggle-container">
+                <label for="coinPresetSelector" style="margin-bottom: 0.25rem;">Coin Label Customization Matrix</label>
+                <select class="theme-select" id="coinPresetSelector" onchange="CoinModule.handlePresetChange(this)" style="width: 100%; margin-bottom: 0.5rem;">
+                    <option value="heads/tails">🪙 Heads / Tails Preset</option>
+                    <option value="yesno">🟢 Yes / 🔴 No Preset</option>
+                    <option value="buysell">📈 Buy / 📉 Sell Preset</option>
+                    <option value="leftright">⬅️ Left / ➡️ Right Preset</option>
+                    <option value="eatcook">🍳 Eat Out / 🍳 Cook Preset</option>
+                    <option value="custom">✏️ Custom Choices Text Override...</option>
+                </select>
+                <div id="customCoinInputsWrapper" style="display: none; gap: 0.5rem; width: 100%;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.65rem;">Front Face Text</label>
+                        <input type="text" id="coinFrontText" value="HEADS" max-length="12" oninput="CoinModule.updateLabels()">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.65rem;">Back Face Text</label>
+                        <input type="text" id="coinBackText" value="TAILS" max-length="12" oninput="CoinModule.updateLabels()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="coin-stage" onclick="CoinModule.flip()">
+                <div class="coin" id="coin-element">
+                    <div class="coin-face coin-front" id="coinFrontLabelNode">HEADS</div>
+                    <div class="coin-face coin-back" id="coinBackLabelNode">TAILS</div>
+                </div>
+            </div>
+            <button class="btn" onclick="CoinModule.flip()">Flip Coin</button>
+            
+            <div class="result-container" id="coinContainerBox">
+                <div class="result-box" id="coin-result">Call your flip...</div>
+                <button class="copy-result-btn" onclick="CoreUtils.copyOutput('coin-result')">📋 Copy</button>
+            </div>
+            <div class="history-list" id="coin-history">History: None</div>
+        </div>
+
+        <!-- MODULE 3: DICE ROLLER -->
+        <div id="dice-panel" class="panel">
+            <h2>🎲 Interactive Mixed Dice Bag</h2>
+            <label>Click to add individual dice pieces into your active rolling tray:</label>
+            <div class="dice-custom-row" style="flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; background-color: rgba(0,0,0,0.1); padding: 0.5rem; border-radius: 8px; display: flex; align-items: center;">
+                <button class="file-import-btn" onclick="DiceModule.addDie(4)">+ D4</button>
+                <button class="file-import-btn" onclick="DiceModule.addDie(6)">+ D6</button>
+                <button class="file-import-btn" onclick="DiceModule.addDie(8)">+ D8</button>
+                <button class="file-import-btn" onclick="DiceModule.addDie(10)">+ D10</button>
+                <button class="file-import-btn" onclick="DiceModule.addDie(12)">+ D12</button>
+                <button class="file-import-btn" onclick="DiceModule.addDie(20)">+ D20</button>
+                
+                <div style="display: flex; align-items: center; gap: 0.25rem; margin-left: 0.4rem; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 0.5rem;">
+                    <input type="number" id="diceCustomSidesInput" min="1" max="1000" value="100" style="width: 66px; padding: 0.25rem; font-size: 16px; text-align: center; height: 26px;" inputmode="numeric">
+                    <button class="file-import-btn" style="padding: 0.25rem 0.5rem;" onclick="DiceModule.addCustomSidesDie()">+ Custom</button>
+                </div>
+                
+                <button class="btn-clear" onclick="DiceModule.clearTray()" style="margin-left: auto; padding: 0.25rem 0.6rem; font-size: 0.75rem;">🗑️ Clear Tray</button>
+            </div>
+
+            <div class="dice-custom-row" style="margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; background-color: rgba(255,255,255,0.02); padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                <label id="trayModLabel" for="diceModifierInput" style="margin-bottom: 0; font-size: 0.72rem;">Tray Roll Sum Modifier (+/-):</label>
+                <input type="number" id="diceModifierInput" value="0" style="width: 80px; padding: 0.35rem; font-size: 16px; text-align: center; height: 30px;" inputmode="numeric">
+            </div>
+
+            <button class="btn" onclick="DiceModule.roll()">Roll Active Tray Configuration</button>
+            <div class="dice-grid" id="diceGridContainer"></div>
+            
+            <div class="result-container" id="diceContainerBox">
+                <div class="result-box" id="dice-result">Waiting for roll...</div>
+                <button class="copy-result-btn" onclick="CoreUtils.copyOutput('dice-result')">📋 Copy</button>
+            </div>
+        </div>
+
+        <!-- MODULE 4: RANDOM NUMBER GENERATOR -->
+        <div id="number-panel" class="panel">
+            <h2>🔢 Random Number Generator</h2>
+            <div class="range-inputs">
+                <div>
+                    <label for="min-num">Minimum Range</label>
+                    <input type="number" id="min-num" value="1" inputmode="numeric">
+                </div>
+                <div>
+                    <label for="max-num">Maximum Range</label>
+                    <input type="number" id="max-num" value="100" inputmode="numeric">
+                </div>
+            </div>
+            <button class="btn" onclick="NumbersModule.generate()">Generate Number</button>
+            
+            <div class="result-container" id="numberContainerBox">
+                <div class="result-box" id="number-result">No number generated yet</div>
+                <button class="copy-result-btn" onclick="CoreUtils.copyOutput('number-result')">📋 Copy</button>
+            </div>
+            <div class="history-list" id="number-history">History: None</div>
+        </div>
+
+        <!-- MODULE 5: RAFFLE FIELD -->
+        <div id="list-panel" class="panel">
+            <h2>📝 Bulk List Picker & Raffle</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+                <label for="list-input" style="margin-bottom: 0;">Enter items (one option per line)</label>
+                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                    <button class="btn-undo-ghost" id="raffleUndoBtn" onclick="RaffleModule.restoreBackup()">↩ Undo Wipe</button>
+                    <select class="theme-select" style="font-size: 0.72rem; padding: 0.35rem 0.5rem;" onchange="RaffleModule.loadPreset(this)">
+                        <option value="">📋 Load Preset...</option>
+                        <option value="yesno">Yes / No / Maybe</option>
+                        <option value="days">Days of the Week</option>
+                        <option value="rps">Rock Paper Scissors</option>
+                        <option value="num15">Numbers 1-5</option>
+                        <option value="num110">Numbers 1-10</option>
+                        <option value="mystic">🔮 Mystic Oracle</option>
+                        <option value="party">🎭 Party Activity Picker</option>
+                        <option value="chores">🧹 Chore Roulette</option>
+                        <option value="dinner">🍽️ What's for Dinner</option>
+                    </select>
+                    <label class="file-import-btn">
+                        📁 Import TXT / CSV
+                        <input type="file" accept=".txt,.csv" onchange="RaffleModule.handleImport(event)" style="display: none;">
+                    </label>
+                    <button class="btn-clear" onclick="RaffleModule.clearAll()">🗑️ Clear All</button>
+                </div>
+            </div>
+            <textarea id="list-input" rows="6" placeholder="🍕 Pizza&#10;🍔 Burgers&#10;🌮 Tacos&#10;🍣 Sushi&#10;🥗 Salad"></textarea>
+            
+            <div class="option-toggle-container">
+                <label class="switch-label capsule-container">
+                    <input type="checkbox" id="listRemoveToggle">
+                    <span class="slider-capsule"></span>
+                    <span>Clean up: Automatically delete drawn winners from text field pool</span>
+                </label>
+                <label class="switch-label capsule-container">
+                    <input type="checkbox" id="listReplaceToggle">
+                    <span class="slider-capsule"></span>
+                    <span>Allow duplicate wins (Draw with replacement calculation constraints)</span>
+                </label>
+            </div>
+
+            <div class="picker-options">
+                <label for="pick-count">Amount of winners to draw:</label>
+                <input type="number" id="pick-count" value="1" min="1" style="max-width: 120px;" inputmode="numeric">
+            </div>
+
+            <button class="btn" onclick="RaffleModule.draw()">Draw Unbiased Winner</button>
+            
+            <div class="result-container" id="listContainerBox">
+                <div class="result-box" id="list-result" style="font-size: 1.4rem; min-height: 140px;">No entries drawn yet</div>
+                <button class="copy-result-btn" onclick="CoreUtils.copyOutput('list-result')">📋 Copy</button>
+            </div>
+        </div>
+
+        <!-- MODULE 6: MAGIC 8-BALL -->
+        <div id="ball-panel" class="panel">
+            <h2>8-Ball Oracle</h2>
+            <label for="ball-question">Ask your question:</label>
+            <input type="text" id="ball-question" placeholder="Will my CodePen project run smoothly?..." style="margin-bottom: 1rem;">
+            
+            <div class="ball-stage">
+                <div class="eight-ball" id="eightBallElement" onclick="OracleModule.shake()">
+                    <div class="ball-window" id="ballWindow">
+                        <div class="inner-eight" id="ballCenter8">8</div>
+                    </div>
+                </div>
+            </div>
+            <button class="btn" onclick="OracleModule.shake()">Consult Oracle</button>
+            
+            <div class="result-container" style="display:none;" id="ballContainerBox">
+                <div id="ball-text-hidden"></div>
+                <button class="copy-result-btn" onclick="CoreUtils.copyOutput('ball-text-hidden')">📋 Copy Answer</button>
+            </div>
+        </div>
+
+        <!-- TRANSACTION ANALYSIS LEDGER ENGINE -->
+        <div class="session-log-section" id="sessionLogSection">
+            <div class="session-log-header">
+                <span>📋 Master Session Draw Log</span>
+                <div style="display: flex; gap: 0.65rem; align-items: center;">
+                    <button class="file-import-btn" style="padding: 0.2rem 0.55rem; font-size: 0.72rem;" onclick="PlatformEngine.downloadLogText()">📥 Download Log (.txt)</button>
+                    <span id="logCounterDisplay">(0 entries)</span>
+                </div>
+            </div>
+            
+            <div class="stats-summary-drawer" id="sessionStatsDrawerBox">
+                <div class="stats-badge">No outcomes recorded in current workspace session yet.</div>
+            </div>
+
+            <div class="session-log-container" id="sessionLogContentBox"></div>
+        </div>
+    </div>
+
+    <script>
+        let masterSessionLog = [];
+        let coinHistory = [];
+        let numberHistory = [];
+        let diceTray = [6]; 
+        let isWheelSpinning = false, isCoinFlipping = false, isDiceRolling = false, isBallShaking = false;
+        let currentWheelAngle = 0;
+        let audioCtx = null;
+        let wheelItems = [];
+
+        const baseColors = ["#6366f1", "#a855f7", "#ec4899", "#f43f5e", "#eab308", "#10b981", "#06b6d4"];
+        const answers8Ball = ["It is certain.", "Reply hazy, try again.", "Don't count on it.", "Without a doubt.", "Ask again later.", "My sources say no.", "Yes definitely.", "Outlook not so good.", "Signs point to yes."];
+
+        const AudioEngine = {
+            init() {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            },
+            playTick(frequency = 600, duration = 0.04) {
+                if (!document.getElementById("soundToggle").checked) return;
+                try {
+                    this.init(); if (!audioCtx) return;
+                    const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                    osc.start(); osc.stop(audioCtx.currentTime + duration);
+                } catch(e) {}
+            },
+            playChime() {
+                if (!document.getElementById("soundToggle").checked) return;
+                try {
+                    this.init(); if (!audioCtx) return;
+                    const now = audioCtx.currentTime;
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                        const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+                        osc.connect(gain); gain.connect(audioCtx.destination);
+                        osc.type = 'triangle'; osc.frequency.setValueAtTime(freq, now + (idx * 0.05));
+                        gain.gain.setValueAtTime(0.04, now + (idx * 0.05));
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                        osc.start(now + (idx * 0.05)); osc.stop(now + 0.4);
+                    });
+                } catch(e) {}
+            },
+            playRumble(duration = 0.5) {
+                if (!document.getElementById("soundToggle").checked) return;
+                try {
+                    this.init(); if (!audioCtx) return;
+                    const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(95, audioCtx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(35, audioCtx.currentTime + duration);
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                    osc.start(); osc.stop(audioCtx.currentTime + duration);
+                } catch(e) {}
+            }
+        };
+
+        const StorageEngine = {
+            isAvailable: (() => {
+                try {
+                    const testKey = '__storage_test_token__';
+                    localStorage.setItem(testKey, testKey);
+                    localStorage.removeItem(testKey);
+                    return true;
+                } catch (e) { return false; }
+            })(),
+            memoryFallback: { wheel: null, raffle: "" },
+            save() {
+                try {
+                    if (this.isAvailable) {
+                        localStorage.setItem('rollset_wheel_data', JSON.stringify(wheelItems));
+                        localStorage.setItem('rollset_raffle_data', document.getElementById("list-input").value);
+                    } else {
+                        this.memoryFallback.wheel = JSON.stringify(wheelItems);
+                        this.memoryFallback.raffle = document.getElementById("list-input").value;
+                    }
+                } catch(e) {}
+            },
+            load() {
+                try {
+                    if (this.isAvailable) {
+                        const w = localStorage.getItem('rollset_wheel_data');
+                        const r = localStorage.getItem('rollset_raffle_data');
+                        if (w) wheelItems = JSON.parse(w);
+                        if (r) document.getElementById("list-input").value = r;
+                    } else {
+                        if (this.memoryFallback.wheel) wheelItems = JSON.parse(this.memoryFallback.wheel);
+                        if (this.memoryFallback.raffle) document.getElementById("list-input").value = this.memoryFallback.raffle;
+                    }
+                } catch(e) {}
+            }
+        };
+
+        const CoreUtils = {
+            wheelBackupCache: null, raffleBackupCache: null,
+            presets: {
+                yesno: ["🟢 Yes", "🔴 No", "🟡 Maybe"],
+                days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+                rps: ["✊ Rock", "✋ Paper", "✌️ Scissors"],
+                num15: ["1", "2", "3", "4", "5"],
+                num110: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+                teams: ["Team Alpha", "Team Beta", "Team Gamma", "Team Delta"],
+                mystic: ["🔮 Absolutely", "🔮 No Way", "🔮 Proceed with Caution", "🔮 Try Again Later"],
+                party: ["🎭 Charades", "🎨 Pictionary", "🎴 Trivia Challenge", "🎤 Karaoke Song", "🧩 Board Game"],
+                chores: ["🧹 Vacuuming", "🧽 Wash Dishes", "🧺 Do Laundry", "🗑️ Take Out Trash", "🧼 Clean Bathroom", "🌱 Water Plants"],
+                dinner: ["🍕 Pizza", "🍔 Burgers", "🌮 Tacos", "🍣 Sushi", "🥗 Salad", "🍝 Pasta", "🍛 Curry"]
+            },
+            copyOutput(targetElementId) {
+                const node = document.getElementById(targetElementId); if (!node) return;
+                let textToCopy = node.innerText;
+                if (targetElementId === "dice-result") {
+                    const mainSum = node.querySelector('strong');
+                    if(mainSum) textToCopy = `Sum: ${mainSum.innerText}`;
+                }
+                textToCopy = textToCopy.replace(/^🎉\s*|^🪙\s*|^🔢\s*|^🎲\s*/g, '').trim();
+                if (!textToCopy || ["Ready to spin", "Call your flip", "Waiting for roll", "No number generated yet", "No entries drawn yet"].some(s => textToCopy.includes(s))) return;
+
+                const el = document.createElement('textarea'); el.value = textToCopy;
+                document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
+                AudioEngine.playTick(1000, 0.03);
+            },
+            burstConfetti(boxId) {
+                const container = document.getElementById(boxId); if (!container) return;
+                const colors = ["#ff007f", "#00ffff", "#6366f1", "#a855f7", "#10b981", "#eab308", "#f43f5e"];
+                for (let i = 0; i < 35; i++) {
+                    const piece = document.createElement("div"); piece.className = "micro-confetti-piece";
+                    const angle = Math.random() * Math.PI * 2, dist = 40 + Math.floor(Math.random() * 110);
+                    piece.style.setProperty('--target-x', `${Math.cos(angle) * dist}px`);
+                    piece.style.setProperty('--target-y', `${Math.sin(angle) * dist + (Math.random() * 20)}px`);
+                    piece.style.setProperty('--target-angle', `${Math.floor(Math.random() * 360)}deg`);
+                    piece.style.setProperty('--duration', `${0.5 + Math.random() * 0.4}s`);
+                    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    container.appendChild(piece); setTimeout(() => piece.remove(), 900);
+                }
+            },
+            executeFileImport(event, successCallback) {
+                const file = event.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    const lines = evt.target.result.split(/[\r\n,]+/).map(l => l.trim()).filter(l => l !== "");
+                    if (lines.length > 0) successCallback(lines);
+                };
+                reader.readAsText(file); event.target.value = "";
+            }
+        };
+
+        const PlatformEngine = {
+            switchTab(panelId) {
+                AudioEngine.playTick(800, 0.03);
+                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById(panelId).classList.add('active');
+                document.getElementById('btn-' + panelId.split('-')[0]).classList.add('active');
+                if(panelId === 'wheel-panel') SpinnerModule.draw();
+                if(panelId === 'dice-panel') DiceModule.renderTray();
+            },
+            changeViewMode() {
+                AudioEngine.playTick(850, 0.04);
+                const isFocus = document.getElementById("focusToggle").checked;
+                document.body.classList.toggle("view-focus", isFocus);
+                document.getElementById("topControlMenuPillRow").classList.remove("expanded");
+                SpinnerModule.draw(); 
+            },
+            toggleFocusMenu() {
+                AudioEngine.playTick(750, 0.03);
+                document.getElementById("topControlMenuPillRow").classList.toggle("expanded");
+            },
+            logDraw(moduleTag, textResult) {
+                const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                masterSessionLog.unshift({ time: timestamp, tag: moduleTag, res: textResult });
+                
+                document.getElementById("logCounterDisplay").innerText = `(${masterSessionLog.length} entries)`;
+                const entry = document.createElement("div"); entry.className = "log-entry";
+                entry.innerHTML = `<span class="log-timestamp">[${timestamp}]</span> <span class="log-tag">${moduleTag}:</span> <span>${textResult}</span>`;
+                const container = document.getElementById("sessionLogContentBox");
+                if(container) container.insertBefore(entry, container.firstChild);
+                this.calculateMetricsSummary();
+            },
+            calculateMetricsSummary() {
+                const drawer = document.getElementById("sessionStatsDrawerBox"); if (!drawer) return;
+                if (masterSessionLog.length === 0) {
+                    drawer.innerHTML = `<div class="stats-badge">No outcomes recorded in current workspace session yet.</div>`; return;
+                }
+                const groups = {};
+                masterSessionLog.forEach(log => {
+                    if (!groups[log.tag]) groups[log.tag] = { total: 0, items: {} };
+                    groups[log.tag].total++;
+                    
+                    let label = String(log.res).replace(/^🎉\s*|^🪙\s*|^🔢\s*|^🎲\s*|Sum\s*Total:\s*/gi, '').split('\n')[0].trim();
+                    if (log.tag === "Dice Roller" && label.includes("[Raw:")) label = label.split("[Raw:")[0].trim();
+                    if (label.includes('Tray Breakdown:')) label = label.split('Tray Breakdown:')[0].trim();
+                    if (label.length > 25) label = label.substring(0, 22) + '...';
+                    groups[log.tag].items[label] = (groups[log.tag].items[label] || 0) + 1;
+                });
+                let html = "";
+                for (const [mod, data] of Object.entries(groups)) {
+                    html += `<div style="font-weight:700; text-transform:uppercase; letter-spacing:0.04em; width:100%; margin-top:0.25rem; font-size:0.68rem; color:var(--text-main);">${mod} Tally (Total: ${data.total})</div>`;
+                    for (const [out, count] of Object.entries(data.items)) {
+                        html += `<div class="stats-badge">${out}: <strong>${count}x</strong> (${Math.round((count / data.total) * 100)}%)</div>`;
+                    }
+                }
+                drawer.innerHTML = html;
+            },
+            toggleSessionLog() {
+                AudioEngine.playTick(720, 0.04);
+                document.getElementById("sessionLogSection").style.display = document.getElementById("logToggle").checked ? "block" : "none";
+                this.calculateMetricsSummary();
+            },
+            downloadLogText() {
+                if (masterSessionLog.length === 0) return;
+                AudioEngine.playTick(950, 0.05);
+                const blob = new Blob([masterSessionLog.map(e => `[${e.time}] ${e.tag}: ${e.res}`).join("\r\n")], { type: "text/plain;charset=utf-8;" });
+                const a = document.createElement("a"); a.setAttribute("href", URL.createObjectURL(blob));
+                a.setAttribute("download", `randomizer_audit_log_${new Date().toISOString().slice(0,10)}.txt`);
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            },
+            copyShareLink() {
+                const active = document.querySelector('.panel.active');
+                const state = {
+                    w: wheelItems.map(i => `${i.text}:${i.weight}`),
+                    l: document.getElementById("list-input").value,
+                    m: document.getElementById("focusToggle").checked ? 'focus' : 'standard',
+                    t: active ? active.id : 'wheel-panel'
+                };
+                const url = window.location.href.split('#')[0] + '#' + btoa(encodeURIComponent(JSON.stringify(state)));
+                const el = document.createElement('textarea'); el.value = url; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
+                const toast = document.getElementById("shareToast"); toast.classList.add("show"); AudioEngine.playTick(900, 0.05);
+                setTimeout(() => toast.classList.remove("show"), 2500);
+            },
+            hydrateFromUrl() {
+                if (!window.location.hash) return false;
+                try {
+                    const state = JSON.parse(decodeURIComponent(atob(window.location.hash.substring(1))));
+                    if (state.w) wheelItems = state.w.map(s => ({ text: s.split(':')[0], weight: parseInt(s.split(':')[1]) || 1 }));
+                    if (state.l) document.getElementById("list-input").value = state.l;
+                    if (state.m) { document.getElementById("focusToggle").checked = (state.m === 'focus'); this.changeViewMode(); }
+                    if (state.t) this.switchTab(state.t);
+                    StorageEngine.save();
+                    return true;
+                } catch(e) { return false; }
+            },
+            triggerActiveTool() {
+                const active = document.querySelector('.panel.active'); if (!active) return;
+                if (active.id === "wheel-panel") SpinnerModule.spin();
+                else if (active.id === "coin-panel") CoinModule.flip();
+                else if (active.id === "dice-panel") DiceModule.roll();
+                else if (active.id === "number-panel") NumbersModule.generate();
+                else if (active.id === "list-panel") RaffleModule.draw();
+                else if (active.id === "ball-panel") OracleModule.shake();
+            }
+        };
+
+        const SpinnerModule = {
+            draw() {
+                const canvas = document.getElementById("wheel"); if (!canvas) return;
+                const ctx = canvas.getContext("2d"), r = canvas.width / 2;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const totalW = wheelItems.reduce((s, i) => s + i.weight, 0);
+
+                if (wheelItems.length === 0 || totalW === 0) {
+                    ctx.fillStyle = "#1e293b"; ctx.beginPath(); ctx.arc(r, r, r - 20, 0, 2 * Math.PI); ctx.fill();
+                    ctx.strokeStyle = "rgba(99, 102, 241, 0.2)"; ctx.lineWidth = 4; ctx.stroke();
+                    ctx.fillStyle = "#94a3b8"; ctx.font = "bold 20px 'Inter', sans-serif"; ctx.textAlign = "center";
+                    ctx.fillText("Type items below to populate wheel...", r, r + 6); return;
+                }
+
+                let curAngle = 0;
+                wheelItems.forEach((item, i) => {
+                    const sliceAngle = (item.weight / totalW) * (2 * Math.PI);
+                    ctx.fillStyle = baseColors[i % baseColors.length]; ctx.beginPath(); ctx.moveTo(r, r);
+                    ctx.arc(r, r, r, curAngle, curAngle + sliceAngle); ctx.closePath(); ctx.fill();
+                    ctx.save(); ctx.translate(r, r); ctx.rotate(curAngle + sliceAngle / 2); ctx.fillStyle = "#ffffff";
+                    let size = item.text.length > 15 ? 18 : (item.text.length > 9 ? 20 : 24);
+                    ctx.font = `bold ${size}px 'Inter', 'Segoe UI Emoji', sans-serif`; ctx.textAlign = "right";
+                    ctx.fillText(`${item.text.length > 18 ? item.text.substring(0, 16) + "..." : item.text} (${item.weight})`, r - 40, 8); ctx.restore();
+                    curAngle += sliceAngle;
+                });
+            },
+            renderTags() {
+                const el = document.getElementById("wheel-tags-container"); el.innerHTML = "";
+                wheelItems.forEach((item, idx) => {
+                    const div = document.createElement("div"); div.className = "tag-row";
+                    div.innerHTML = `<div class="tag-info"><strong>${item.text}</strong><span class="weight-indicator">Weight: ${item.weight}</span></div><span class="tag-remove" onclick="SpinnerModule.removeItem(${idx})">&times;</span>`;
+                    el.appendChild(div);
+                });
+                this.draw();
+            },
+            addItem() {
+                const txt = document.getElementById("wheel-new-item"), wt = document.getElementById("wheel-new-weight");
+                const val = txt.value.trim(), wVal = parseInt(wt.value) || 1;
+                if (val) {
+                    CoreUtils.wheelBackupCache = [...wheelItems]; document.getElementById("wheelUndoBtn").style.display = "inline-block";
+                    wheelItems.push({ text: val, weight: Math.max(1, wVal) }); txt.value = ""; wt.value = "1"; this.renderTags();
+                    StorageEngine.save(); AudioEngine.playTick(700, 0.05);
+                }
+            },
+            removeItem(idx) {
+                CoreUtils.wheelBackupCache = [...wheelItems]; document.getElementById("wheelUndoBtn").style.display = "inline-block";
+                wheelItems.splice(idx, 1); this.renderTags(); StorageEngine.save(); AudioEngine.playTick(400, 0.05);
+            },
+            clearAll() {
+                if (wheelItems.length > 0) { CoreUtils.wheelBackupCache = [...wheelItems]; document.getElementById("wheelUndoBtn").style.display = "inline-block"; }
+                wheelItems = []; this.renderTags(); StorageEngine.save(); AudioEngine.playTick(350, 0.06);
+                PlatformEngine.logDraw("Spinner Wheel", "Cleared all wheel configuration entries");
+            },
+            restoreBackup() {
+                if (CoreUtils.wheelBackupCache) {
+                    wheelItems = [...CoreUtils.wheelBackupCache]; CoreUtils.wheelBackupCache = null;
+                    document.getElementById("wheelUndoBtn").style.display = "none"; this.renderTags(); StorageEngine.save(); AudioEngine.playTick(650, 0.04);
+                }
+            },
+            loadPreset(select) {
+                const token = select.value; if (!token || !CoreUtils.presets[token]) return;
+                AudioEngine.playTick(700, 0.05); CoreUtils.wheelBackupCache = [...wheelItems];
+                document.getElementById("wheelUndoBtn").style.display = "inline-block";
+                wheelItems = CoreUtils.presets[token].map(label => ({ text: label, weight: 1 }));
+                this.renderTags(); select.value = ""; StorageEngine.save();
+                PlatformEngine.logDraw("Spinner Wheel", `Loaded preset configuration library options [${token}]`);
+            },
+            handleImport(e) {
+                CoreUtils.executeFileImport(e, (lines) => {
+                    CoreUtils.wheelBackupCache = [...wheelItems]; document.getElementById("wheelUndoBtn").style.display = "inline-block";
+                    lines.forEach(l => {
+                        const p = l.split(':');
+                        wheelItems.push((p.length > 1 && !isNaN(parseInt(p[1]))) ? { text: p[0].trim(), weight: Math.max(1, parseInt(p[1])) } : { text: l, weight: 1 });
+                    });
+                    this.renderTags(); StorageEngine.save(); AudioEngine.playTick(750, 0.06);
+                    PlatformEngine.logDraw("Spinner Wheel", `Imported list payload file containing ${lines.length} items`);
+                });
+            },
+            spin() {
+                if (isWheelSpinning || wheelItems.length === 0) return;
+                const totalW = wheelItems.reduce((s, i) => s + i.weight, 0); if(totalW === 0) return;
+                isWheelSpinning = true; AudioEngine.init();
+                const box = document.getElementById("wheel-result"); box.classList.remove("highlight"); box.innerText = "Spinning...";
+                const canvas = document.getElementById("wheel"), isFast = document.getElementById("fastToggle").checked, duration = isFast ? 250 : 4000;
+                canvas.style.transition = `transform ${duration}ms cubic-bezier(0.1, 0.8, 0.1, 1)`;
+                const spins = isFast ? 2 : (6 + Math.floor(Math.random() * 4)), degTarget = Math.floor(Math.random() * 360);
+                currentWheelAngle += (spins * 360) + degTarget; canvas.style.transform = `rotate(-${currentWheelAngle}deg)`;
+
+                if (!isFast) {
+                    let ticks = 0; const estTicks = spins * wheelItems.length * 1.4;
+                    let timer = setInterval(() => {
+                        ticks++; if(ticks >= estTicks) clearInterval(timer);
+                        else AudioEngine.playTick(460 + (ticks * 4), 0.015);
+                    }, (4000 / estTicks));
+                } else AudioEngine.playTick(600, 0.02);
+
+                setTimeout(() => {
+                    const clamped = currentWheelAngle % 360, radTarget = ((270 + clamped) % 360) * Math.PI / 180;
+                    let cumulative = 0, winningIdx = 0, winner = wheelItems[0].text;
+                    for (let i = 0; i < wheelItems.length; i++) {
+                        const sliceRad = (wheelItems[i].weight / totalW) * (2 * Math.PI);
+                        if (radTarget >= cumulative && radTarget < cumulative + sliceRad) { winner = wheelItems[i].text; winningIdx = i; break; }
+                        cumulative += sliceRad;
+                    }
+                    box.innerText = "🎉 " + winner; box.classList.add("highlight");
+                    AudioEngine.playChime(); CoreUtils.burstConfetti("wheelContainerBox"); PlatformEngine.logDraw("Spinner Wheel", winner);
+                    if (document.getElementById("wheelRemoveToggle").checked) {
+                        setTimeout(() => { 
+                            CoreUtils.wheelBackupCache = [...wheelItems]; document.getElementById("wheelUndoBtn").style.display = "inline-block";
+                            wheelItems.splice(winningIdx, 1); this.renderTags(); StorageEngine.save();
+                        }, isFast ? 100 : 1200);
+                    }
+                    currentWheelAngle = clamped; canvas.style.transition = "none"; canvas.style.transform = `rotate(-${currentWheelAngle}deg)`;
+                    isWheelSpinning = false;
+                }, duration);
+            }
+        };
+
+        const CoinModule = {
+            handlePresetChange(select) {
+                const token = select.value, wrapper = document.getElementById("customCoinInputsWrapper");
+                const fIn = document.getElementById("coinFrontText"), bIn = document.getElementById("coinBackText");
+                AudioEngine.playTick(650, 0.04);
+                if (token === "custom") wrapper.style.display = "flex";
+                else {
+                    wrapper.style.display = "none";
+                    const labels = { "heads/tails": ["HEADS", "TAILS"], "yesno": ["YES", "NO"], "buysell": ["BUY", "SELL"], "leftright": ["LEFT", "RIGHT"], "eatcook": ["EAT OUT", "COOK"] };
+                    if(labels[token]) { fIn.value = labels[token][0]; bIn.value = labels[token][1]; }
+                    this.updateLabels();
+                }
+            },
+            updateLabels() {
+                document.getElementById("coinFrontLabelNode").innerText = (document.getElementById("coinFrontText").value.trim() || "FRONT").toUpperCase();
+                document.getElementById("coinBackLabelNode").innerText = (document.getElementById("coinBackText").value.trim() || "BACK").toUpperCase();
+            },
+            flip() {
+                if (isCoinFlipping) return; isCoinFlipping = true; AudioEngine.init();
+                const coin = document.getElementById("coin-element"), box = document.getElementById("coin-result");
+                box.classList.remove("highlight"); box.innerText = "Flipping...";
+                const isFast = document.getElementById("fastToggle").checked, duration = isFast ? 150 : 2000;
+                coin.style.transition = `transform ${duration}ms cubic-bezier(0.1, 0.7, 0.1, 1)`;
+                const isHeads = Math.random() < 0.5, rotations = isFast ? 2 : (6 + Math.floor(Math.random() * 4) * 2);
+                coin.style.transform = `rotateY(${isHeads ? (rotations * 180) : ((rotations + 1) * 180)}deg)`;
+                if (!isFast) AudioEngine.playTick(1100, 0.08);
+
+                setTimeout(() => {
+                    const choice = isHeads ? document.getElementById("coinFrontLabelNode").innerText : document.getElementById("coinBackLabelNode").innerText;
+                    box.innerText = "🪙 " + choice; box.classList.add("highlight");
+                    AudioEngine.playChime(); CoreUtils.burstConfetti("coinContainerBox"); PlatformEngine.logDraw("Coin Flip", choice);
+                    coinHistory.unshift(choice); if (coinHistory.length > 10) coinHistory.pop();
+                    document.getElementById("coin-history").innerText = "History: " + coinHistory.join(", ");
+                    isCoinFlipping = false;
+                }, duration);
+            }
+        };
+
+        const DiceModule = {
+            renderTray() {
+                const el = document.getElementById("diceGridContainer"); el.innerHTML = "";
+                if (diceTray.length === 0) {
+                    el.innerHTML = `<div style="color:var(--text-muted); font-size:0.82rem; font-style:italic; text-align:center; width:100%; padding:0.5rem 0;">Tray configuration is currently empty. Click buttons above to add dice!</div>`; return;
+                }
+                diceTray.forEach(sides => {
+                    const d = document.createElement("div"); d.className = "die"; d.style.position = "relative";
+                    d.innerHTML = `<span style="font-size:0.65rem; color:var(--accent); position:absolute; top:2px; left:4px; font-weight:700; font-family:monospace;">D${sides}</span>?`;
+                    el.appendChild(d);
+                });
+            },
+            addDie(sides) { if (diceTray.length >= 30) return; AudioEngine.playTick(700, 0.03); diceTray.push(sides); this.renderTray(); },
+            addCustomSidesDie() { const v = parseInt(document.getElementById("diceCustomSidesInput").value) || 100; if (v >= 1 && v <= 1000) this.addDie(v); },
+            clearTray() { AudioEngine.playTick(400, 0.05); diceTray = []; document.getElementById("diceModifierInput").value = "0"; this.renderTray(); },
+            roll() {
+                if (isDiceRolling) return; const grid = document.getElementById("diceGridContainer"), box = document.getElementById("dice-result");
+                if (diceTray.length === 0) { box.classList.remove("highlight"); box.innerText = "Add dice items to your tray first!"; return; }
+                isDiceRolling = true; AudioEngine.init(); box.classList.remove("highlight"); box.innerText = "Rolling tray mix...";
+                const isFast = document.getElementById("fastToggle").checked; grid.innerHTML = ""; const elements = [];
+                
+                diceTray.forEach(sides => {
+                    const n = document.createElement("div"); n.className = "die" + (isFast ? "" : " shake"); n.style.position = "relative";
+                    n.innerHTML = `<span style="font-size:0.65rem; color:var(--accent); position:absolute; top:2px; left:4px; font-weight:700; font-family:monospace;">D${sides}</span>1`;
+                    grid.appendChild(n); elements.push({ node: n, sides: sides });
+                });
+
+                let interval = isFast ? null : setInterval(() => {
+                    AudioEngine.playTick(380 + Math.floor(Math.random() * 120), 0.02);
+                    elements.forEach(d => d.node.innerHTML = `<span style="font-size:0.65rem; color:var(--accent); position:absolute; top:2px; left:4px; font-weight:700; font-family:monospace;">D${d.sides}</span>${Math.floor(Math.random() * d.sides) + 1}`);
+                }, 65);
+
+                setTimeout(() => {
+                    if (interval) clearInterval(interval);
+                    let sum = 0; const sequences = [];
+                    elements.forEach(d => {
+                        d.node.classList.remove("shake"); const roll = Math.floor(Math.random() * d.sides) + 1;
+                        d.node.innerHTML = `<span style="font-size:0.65rem; color:var(--accent); position:absolute; top:2px; left:4px; font-weight:700; font-family:monospace;">D${d.sides}</span>${roll}`;
+                        sequences.push(`D${d.sides}(${roll})`); sum += roll;
+                    });
+                    const modIn = document.getElementById("diceModifierInput"), modifier = modIn && modIn.value.trim() !== "" ? (parseInt(modIn.value) || 0) : 0;
+                    const finalSum = sum + modifier;
+                    box.innerHTML = `<div style="font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem; justify-content: center; flex-wrap: wrap;"><span>🎲 Sum Total:</span><strong style="color:var(--accent); font-size:2rem; font-weight:700;">${finalSum}</strong><span style="font-size:0.85rem; color:var(--text-muted);">${modifier !== 0 ? ` (${modifier >= 0 ? '+' : ''}${modifier} Mod)` : ''}</span></div><div style="font-size:0.82rem; color:var(--text-muted); max-width: 100%; line-height: 1.45; word-break: break-word; overflow-wrap: anywhere; padding: 0 0.5rem;">Tray Breakdown: ${sequences.join(" + ")}${modifier !== 0 ? ' + ' + modifier : ''}</div>`;
+                    box.classList.add("highlight"); AudioEngine.playChime(); CoreUtils.burstConfetti("diceContainerBox");
+                    PlatformEngine.logDraw("Dice Roller", `Rolled tray sum ${finalSum} [Raw: ${sum}${modifier !== 0 ? ` (${modifier >= 0 ? '+' : ''}${modifier} Mod)` : ''}] (${sequences.join(",")})`);
+                    isDiceRolling = false;
+                }, isFast ? 50 : 800);
+            }
+        };
+
+        const NumbersModule = {
+            generate() {
+                const min = parseInt(document.getElementById("min-num").value), max = parseInt(document.getElementById("max-num").value), box = document.getElementById("number-result");
+                box.classList.remove("highlight"); if (isNaN(min) || isNaN(max) || min > max) { box.innerText = "Error: Check bounds"; return; }
+                AudioEngine.init(); AudioEngine.playTick(520, 0.05); const isFast = document.getElementById("fastToggle").checked;
+                setTimeout(() => {
+                    const val = Math.floor(Math.random() * (max - min + 1)) + min;
+                    box.innerText = "🔢 " + val; box.classList.add("highlight"); AudioEngine.playChime(); CoreUtils.burstConfetti("numberContainerBox");
+                    numberHistory.unshift(val); if (numberHistory.length > 10) numberHistory.pop();
+                    document.getElementById("number-history").innerText = "History: " + numberHistory.join(", "); PlatformEngine.logDraw("Number Generator", val);
+                }, isFast ? 10 : 80);
+            }
+        };
+
+        const RaffleModule = {
+            loadPreset(select) {
+                const token = select.value; if (!token || !CoreUtils.presets[token]) return;
+                AudioEngine.playTick(700, 0.05); const textInput = document.getElementById("list-input");
+                CoreUtils.raffleBackupCache = textInput.value; document.getElementById("raffleUndoBtn").style.display = "inline-block";
+                textInput.value = CoreUtils.presets[token].join("\n"); select.value = ""; StorageEngine.save();
+                PlatformEngine.logDraw("Raffle Draw", `Loaded preset configuration raffle registry list [${token}]`);
+            },
+            handleImport(e) {
+                CoreUtils.executeFileImport(e, (lines) => {
+                    const textInput = document.getElementById("list-input");
+                    CoreUtils.raffleBackupCache = textInput.value; document.getElementById("raffleUndoBtn").style.display = "inline-block";
+                    textInput.value = lines.join("\n"); AudioEngine.playTick(750, 0.06); StorageEngine.save();
+                    PlatformEngine.logDraw("Import", `Uploaded external registry payload with ${lines.length} rows`);
+                });
+            },
+            restoreBackup() {
+                if (CoreUtils.raffleBackupCache !== null) {
+                    document.getElementById("list-input").value = CoreUtils.raffleBackupCache; CoreUtils.raffleBackupCache = null;
+                    document.getElementById("raffleUndoBtn").style.display = "none"; StorageEngine.save(); AudioEngine.playTick(650, 0.04);
+                }
+            },
+            clearAll() {
+                const textInput = document.getElementById("list-input");
+                if (textInput.value.trim() !== "") {
+                    CoreUtils.raffleBackupCache = textInput.value;
+                    document.getElementById("raffleUndoBtn").style.display = "inline-block";
+                }
+                textInput.value = "";
+                StorageEngine.save();
+                AudioEngine.playTick(350, 0.06);
+                PlatformEngine.logDraw("Raffle Draw", "Cleared all raffle list entries");
+            },
+            draw() {
+                const textNode = document.getElementById("list-input"), countNode = document.getElementById("pick-count"), box = document.getElementById("list-result");
+                box.classList.remove("highlight"); const entries = textNode.value.split('\n').map(i => i.trim()).filter(i => i !== "");
+                if (entries.length === 0) { box.innerText = "Please input textual entries first!"; return; }
+                let count = Math.max(1, parseInt(countNode.value) || 1); const allowReplace = document.getElementById("listReplaceToggle").checked;
+                if (!allowReplace && count > entries.length) { count = entries.length; countNode.value = count; }
+                AudioEngine.init(); AudioEngine.playTick(550, 0.1); const isFast = document.getElementById("fastToggle").checked;
+
+                setTimeout(() => {
+                    let winners = [];
+                    if (allowReplace) { for(let i = 0; i < count; i++) winners.push(entries[Math.floor(Math.random() * entries.length)]); }
+                    else {
+                        let shuffled = [...entries];
+                        for (let i = shuffled.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; }
+                        winners = shuffled.slice(0, count);
+                    }
+                    box.innerHTML = winners.length === 1 ? `🎉 Winner: <strong style="color:var(--accent); font-size:1.8rem;">${winners[0]}</strong>` : `<div style="font-size:0.9rem; color:var(--text-muted); margin-bottom:0.4rem; font-style:italic;">🎉 Winners Drawn:</div>` + winners.map((w, i) => `<div style="font-size:1.1rem; margin:0.25rem 0;">${i+1}. <strong>${w}</strong></div>`).join("");
+                    box.classList.add("highlight"); AudioEngine.playChime(); CoreUtils.burstConfetti("listContainerBox"); PlatformEngine.logDraw("Raffle Draw", winners.join(" | "));
+                    if (document.getElementById("listRemoveToggle").checked) {
+                        CoreUtils.raffleBackupCache = textNode.value; document.getElementById("raffleUndoBtn").style.display = "inline-block";
+                        textNode.value = entries.filter(e => !winners.includes(e)).join("\n"); StorageEngine.save();
+                    }
+                }, isFast ? 50 : 600);
+            }
+        };
+
+        const OracleModule = {
+            shake() {
+                if (isBallShaking) return; isBallShaking = true; AudioEngine.init();
+                const ball = document.getElementById("eightBallElement"), win = document.getElementById("ballWindow"), containerBox = document.getElementById("ballContainerBox"), isFast = document.getElementById("fastToggle").checked;
+                containerBox.style.display = "none"; win.innerHTML = `<div class="inner-eight" id="ballCenter8">...</div>`;
+                if (!isFast) { ball.classList.add("shake"); AudioEngine.playRumble(0.6); }
+
+                setTimeout(() => {
+                    try {
+                        ball.classList.remove("shake"); const answer = answers8Ball[Math.floor(Math.random() * answers8Ball.length)];
+                        win.innerHTML = `<div class="ball-answer">${answer}</div>`; document.getElementById("ball-text-hidden").innerText = answer;
+                        containerBox.style.display = "block"; AudioEngine.playChime(); CoreUtils.burstConfetti("ballContainerBox");
+                        PlatformEngine.logDraw("Magic 8-Ball", `"${answer}"`);
+                    } catch(err) {} finally { isBallShaking = false; }
+                }, isFast ? 50 : 600);
+            }
+        };
+
+        window.onload = () => { 
+            StorageEngine.load();
+            PlatformEngine.hydrateFromUrl();
+            SpinnerModule.renderTags(); 
+            DiceModule.renderTray(); 
+            CoinModule.updateLabels(); 
+            document.getElementById("list-input").addEventListener("input", () => StorageEngine.save());
+        };
+        
+        document.getElementById("wheel-new-item").addEventListener("keyup", (e) => { if (e.key === "Enter") SpinnerModule.addItem(); });
+
+        window.addEventListener("keydown", (e) => {
+            if (document.activeElement && ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName)) return;
+            if (e.code === "Space" || e.key === " ") { e.preventDefault(); PlatformEngine.triggerActiveTool(); }
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
+                e.preventDefault(); const active = document.querySelector('.panel.active');
+                if (active?.id === "wheel-panel") SpinnerModule.restoreBackup();
+                if (active?.id === "list-panel") RaffleModule.restoreBackup();
+            }
+        });
+
+        document.addEventListener("click", (e) => { if (e.target?.tagName === "BUTTON") e.target.blur(); });
+    </script>
+</body>
+</html>
+
+
